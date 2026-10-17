@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "providers": {
+    "createos": {
+      "name": "createos"
+    },
+    "turso": {
+      "name": "Turso"
+    }
+  },
+  "resources": {
+    "createos-plan": {
+      "livemode": true,
+      "name": "createos-plan",
+      "providerName": "createos",
+      "serviceId": "free"
+    },
+    "createos-project": {
+      "livemode": true,
+      "name": "createos-project",
+      "providerName": "createos",
+      "serviceId": "project"
+    },
+    "turso-plan": {
+      "livemode": true,
+      "name": "turso-plan",
+      "providerName": "Turso",
+      "serviceId": "starter"
+    }
+  }
+}
