@@ -60,6 +60,7 @@ export interface Rehearsal {
   apply?: any;
   refusals: { at: number; universe?: string; why: string; source: string }[];
   error?: string;
+  cleaned?: boolean;
 }
 
 const store = new Map<string, Rehearsal>();
@@ -91,6 +92,27 @@ function setPhase(r: Rehearsal, phase: string, text: string) {
 }
 
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+// Forks of one paused parent are taken one at a time; a fork that lands paused is resumed explicitly.
+let forkChain: Promise<unknown> = Promise.resolve();
+function forkT0(base: Sandbox): Promise<Sandbox> {
+  const next = forkChain.then(async () => {
+    const f = await base.fork({ start_paused: false, egress: STRIPE_ONLY, ingress_enabled: true });
+    const deadline = Date.now() + 300_000;
+    while (Date.now() < deadline) {
+      await f.refresh();
+      if (f.status === "running") return f;
+      if (f.status === "paused") await f.resume().catch(() => {});
+      if (f.status === "failed" || f.status === "error") break;
+      await sleep(2000);
+    }
+    await f.destroy().catch(() => {});
+    throw new Error(`fork ${f.id} did not start (last status ${f.status})`);
+  });
+  forkChain = next.catch(() => {});
+  return next;
+}
 const short = (id: string) => id.slice(0, 6);
 
 function worldSummary(w: any) {
@@ -207,8 +229,7 @@ async function runUniverse(r: Rehearsal, base: Sandbox, u: Universe, worldJson: 
     u.status = "forking";
     emit(r, "universe", `${u.name}: forking T0 (attempt ${n})`, { universe: u.key });
     if (u.sandboxId) await destroyQuietly(u.sandboxId);
-    const fork = await base.fork({ start_paused: false, egress: STRIPE_ONLY, ingress_enabled: true });
-    await fork.waitUntilRunning({ timeoutMs: 300_000 });
+    const fork = await forkT0(base);
     u.sandboxId = attempt.sandboxId = fork.id;
     u.url = fork.previewUrl(8080);
     emit(r, "fork", `${u.name}: universe VM ${fork.id}`, { universe: u.key, data: { id: fork.id, url: u.url } });
@@ -334,6 +355,7 @@ export async function approveAndApply(r: Rehearsal, opts: { tamper?: boolean } =
 
 export async function cleanup(r: Rehearsal) {
   await Promise.all([r.baseId, ...r.universes.map((u) => u.sandboxId)].map((id) => destroyQuietly(id)));
+  r.cleaned = true;
   emit(r, "cleanup", "All sandboxes destroyed");
 }
 

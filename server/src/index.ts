@@ -24,6 +24,11 @@ app.post("/api/rehearsals", async (c) => {
   const body = await c.req.json<{ intent?: string }>();
   const intent = (body.intent ?? "").trim();
   if (intent.length < 10) throw new HttpError(400, "describe the pricing change in a sentence or two");
+  // one rehearsal at a time: every run holds a paused T0 plus a fork per universe
+  const busy = listRehearsals().find((x) => !["review", "done", "error"].includes(x.phase));
+  if (busy) return c.json({ error: "A rehearsal is already running. Watch it live.", id: busy.id }, 409);
+  // free the sandbox slots held by finished rehearsals (their reports are kept in runs/)
+  await Promise.all(listRehearsals().filter((x) => !x.cleaned).map((x) => cleanup(x).catch(() => {})));
   const r = startRehearsal(intent.slice(0, 1200));
   return c.json({ id: r.id });
 });

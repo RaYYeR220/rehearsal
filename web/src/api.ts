@@ -74,7 +74,13 @@ async function j<T>(res: Response): Promise<T> {
 }
 
 export const api = {
-  start: (intent: string) => fetch("/api/rehearsals", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ intent }) }).then((r) => j<{ id: string }>(r)),
+  start: async (intent: string) => {
+    const res = await fetch("/api/rehearsals", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ intent }) });
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 409 && body.id) return { id: body.id as string };  // someone else's run is live: watch it
+    if (!res.ok) throw new Error(body.error ?? `HTTP ${res.status}`);
+    return body as { id: string };
+  },
   get: (id: string) => fetch(`/api/rehearsals/${id}`).then((r) => j<Rehearsal>(r)),
   replay: (id: string) => fetch(`/api/replays/${id}`).then((r) => j<Rehearsal>(r)),
   replays: () => fetch(`/api/replays`).then((r) => j<string[]>(r)),

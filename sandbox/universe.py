@@ -137,7 +137,16 @@ def advance(clocks, target):
 
 # ---------------------------------------------------------------- timeline + metrics
 
-def collect(t0, twins):
+def existing_invoices(twins):
+    """Invoices Stripe issued while the twins were being created: not part of the migration."""
+    ids = set()
+    for tw in twins.values():
+        for inv in stripe.Invoice.list(customer=tw["twin_customer"], limit=20).auto_paging_iter():
+            ids.add(inv.id)
+    return ids
+
+
+def collect(t0, twins, skip_ids=frozenset()):
     timeline = []
     for s in WORLD["subscriptions"]:
         tw = twins[s["id"]]
@@ -152,6 +161,8 @@ def collect(t0, twins):
             after_items.append(entry)
         invoices = []
         for inv in stripe.Invoice.list(customer=tw["twin_customer"], limit=100).auto_paging_iter():
+            if inv.id in skip_ids:
+                continue
             inv = inv.to_dict()
             lines = []
             for ln in stripe.Invoice.list_lines(inv["id"], limit=100).auto_paging_iter():
@@ -264,6 +275,7 @@ def main():
         log("phase", name="twins", subscriptions=len(WORLD["subscriptions"]))
         clocks, twins = build_twins(t0)
         report["clocks"] = clocks
+        pre_ids = existing_invoices(twins)
         log("twins", count=len(twins), clocks=len(clocks))
 
         report["phase"] = "migrate"
@@ -294,7 +306,7 @@ def main():
         advance(clocks, add_months(t0, MONTHS) + 2 * 86400)  # let the last renewals finalize and pay
 
         report["phase"] = "check"
-        timeline = collect(t0, twins)
+        timeline = collect(t0, twins, pre_ids)
         report["timeline"] = timeline
         report["metrics"] = metrics(t0, timeline)
         violations = checks.check(timeline, WORLD, prepared) or []
