@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Rehearsal universe</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet" />
+<style>
+  :root { --bg:#0c0b09; --fg:#efe9dd; --fg2:#b1a99b; --fg3:#756e62; --line:rgba(239,233,221,.1); --ok:#8fd694; --bad:#ff6a55; --acc:#f4a93b; }
+  * { box-sizing: border-box; }
+  body { margin:0; background: radial-gradient(800px 400px at 90% -10%, rgba(244,169,59,.1), transparent 60%), var(--bg); color:var(--fg); font:15px/1.5 "Inter Tight", system-ui, sans-serif; }
+  .w { max-width: 1080px; margin: 0 auto; padding: 32px 20px 64px; }
+  .eb { font: 11px "JetBrains Mono", monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--fg3); }
+  h1 { font: 400 clamp(40px,6vw,72px)/0.95 "Instrument Serif", serif; letter-spacing: -.03em; margin: 10px 0 14px; }
+  p { color: var(--fg2); max-width: 720px; }
+  .st { display:inline-block; font: 12px "JetBrains Mono", monospace; padding: 4px 9px; border:1px solid var(--line); border-radius: 4px; }
+  .ok { color: var(--ok); border-color: rgba(143,214,148,.4); } .bad { color: var(--bad); border-color: rgba(255,106,85,.4); }
+  .k { display:grid; grid-template-columns: repeat(auto-fit, minmax(170px,1fr)); gap:1px; background: var(--line); border:1px solid var(--line); border-radius: 12px; overflow:hidden; margin: 22px 0; }
+  .k div { background:#13110e; padding: 12px 14px; } .k b { display:block; font: 400 28px "Instrument Serif", serif; } .k span { font-size: 12px; color: var(--fg3); }
+  table { width:100%; border-collapse: collapse; font-size: 13.5px; margin-top: 10px; }
+  th, td { text-align:left; padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font: 11px "JetBrains Mono", monospace; color: var(--fg3); text-transform: uppercase; letter-spacing: .08em; font-weight: 400; }
+  td.m { font-family: "JetBrains Mono", monospace; font-size: 12px; }
+  .inv { display:inline-block; margin: 0 4px 4px 0; padding: 2px 6px; border-radius: 3px; border: 1px solid var(--line); font: 11px "JetBrains Mono", monospace; color: var(--fg2); }
+  .inv.p { border-color: rgba(244,169,59,.5); color: var(--acc); }
+  ul.v { border:1px solid rgba(255,106,85,.3); background: rgba(255,106,85,.05); border-radius: 12px; padding: 12px 16px 12px 30px; color:#ffb4a8; }
+  pre { background:#13110e; border:1px solid var(--line); border-radius: 12px; padding: 14px; overflow:auto; font: 12px/1.5 "JetBrains Mono", monospace; color: var(--fg2); }
+  h2 { font: 400 30px "Instrument Serif", serif; letter-spacing: -.02em; margin: 34px 0 6px; }
+  .meta { font: 11.5px "JetBrains Mono", monospace; color: var(--fg3); word-break: break-all; }
+</style>
+</head>
+<body>
+<div class="w" id="app"></div>
+<script>
+const R = __REPORT__;
+const $ = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+const usd = (c) => c == null ? "—" : "$" + (c / 100).toLocaleString("en-US", { maximumFractionDigits: 2 });
+const u = R.universe || {}, m = R.metrics || {};
+const status = R.exit_code === 0 ? '<span class="st ok">policy holds</span>' : R.refused ? '<span class="st bad">refused by guard</span>' : (R.violations || []).length ? '<span class="st bad">' + R.violations.length + ' policy violations</span>' : '<span class="st bad">' + $(R.phase || "running") + '</span>';
+let html = `<div class="eb">Rehearsal ${$(u.rehearsal || "")} · universe ${$((u.key || "").toUpperCase())} · attempt ${u.attempt || 1} · served from this fork's own micro-VM</div>
+<h1>${$(u.name || "Universe")}</h1>${status}<p>${$(u.approach || "")}</p>`;
+if (R.metrics) html += `<div class="k">
+  <div><b>${usd(m.revenue_total)}</b><span>6-month revenue (status quo ${usd(m.baseline_total)})</span></div>
+  <div><b>${usd(m.mrr_after)}</b><span>MRR after (was ${usd(m.mrr_before)})</span></div>
+  <div><b>${m.customers_increased}/${m.customers}</b><span>customers paying more · max +${m.max_increase_pct}%</span></div>
+  <div><b>${m.proration_lines}</b><span>proration lines (${usd(m.proration_total)})</span></div>
+  <div><b>${m.failed_invoices}</b><span>failed invoices</span></div></div>`;
+if ((R.violations || []).length) html += `<ul class="v">${R.violations.map((v) => "<li>" + $(v) + "</li>").join("")}</ul>`;
+if (R.error) html += `<h2>Error</h2><pre>${$(R.error)}</pre>`;
+if (R.timeline) {
+  html += `<h2>Every customer, every invoice</h2><p>Twins of the real subscriptions, billed by Stripe on test clocks. Orange = proration.</p><table><tr><th>Customer</th><th>Before</th><th>After</th><th>Invoices by month</th></tr>`;
+  for (const c of R.timeline) {
+    const inv = c.invoices.filter((i) => i.amount_due || i.lines.some((l) => l.proration)).map((i) => `<span class="inv ${i.lines.some((l) => l.proration) ? "p" : ""}">M${i.month} ${usd(i.amount_paid || i.amount_due)} ${i.status !== "paid" ? $(i.status) : ""}</span>`).join("");
+    html += `<tr><td>${$(c.customer_name)}<div class="meta">${$(c.real_sub)}</div></td><td class="m">${usd(c.before.monthly)}/mo</td><td class="m">${usd(c.after.monthly)}/mo</td><td>${inv || '<span class="meta">no charges</span>'}</td></tr>`;
+  }
+  html += `</table>`;
+}
+html += `<h2>Proof</h2><div class="meta">strategy.py sha256 ${$(R.strategy_sha256 || "")}<br/>${(R.guard_log || []).length} Stripe calls through the guard · ${(R.guard_log || []).filter((g) => !g.allowed).length} refused<br/>test clocks ${(R.clocks || []).map($).join(", ")}</div>`;
+document.getElementById("app").innerHTML = html;
+</script>
+</body>
+</html>
