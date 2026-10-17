@@ -311,8 +311,10 @@ export async function requestApproval(r: Rehearsal, key: string) {
   u.status = "pausing";
   emit(r, "approval", `${u.name}: pausing the universe VM so the verified code is held exactly as tested`, { universe: u.key });
   const sb = await client.getSandbox(u.sandboxId!);
-  await sb.pause();
-  await sb.waitUntilPaused({ timeoutMs: 300_000 });
+  if (sb.status !== "paused") {
+    await sb.pause();
+    await sb.waitUntilPaused({ timeoutMs: 300_000 });
+  }
   u.status = "awaiting_approval";
   r.approval = { universe: key, sha256: last.sha256!, subscriptions: r.world.subscriptions.map((s: any) => s.id), at: Date.now(), sandboxId: sb.id };
   setPhase(r, "approval", `Waiting for a human: ${u.name} (sha256 ${last.sha256!.slice(0, 12)}) is paused and holds the exact code that passed`);
@@ -340,9 +342,9 @@ export async function approveAndApply(r: Rehearsal, opts: { tamper?: boolean } =
     u.status = "refused";
     r.refusals.push({ at: Date.now(), universe: u.key, why: out.why, source: "apply gate (in VM)" });
     emit(r, "refused", `Apply refused: ${out.why}`, { universe: u.key, data: out });
-    // the approval stays on record; re-request to try again with the untampered code
+    // a held VM that failed the gate is never trusted again; nothing was applied
     await sb.pause().catch(() => {});
-    u.status = "passed";
+    u.status = "refused";
     r.approval = undefined;
     setPhase(r, "review", "Apply was refused. Nothing was changed.");
     return r.apply;

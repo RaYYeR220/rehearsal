@@ -69,7 +69,7 @@ export function ForkChart({ universes, months }: { universes: Universe[]; months
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} role="img" aria-label="Cumulative revenue per universe">
-      {ticks.map((v, i) => (
+      {series.length > 0 && ticks.map((v, i) => (
         <g key={i}>
           <line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke="rgba(239,233,221,0.07)" />
           <text x={L - 10} y={y(v) + 4} textAnchor="end" fill="var(--fg-3)" fontFamily="var(--mono)" fontSize="11">{usd(v)}</text>
@@ -92,9 +92,20 @@ export function ForkChart({ universes, months }: { universes: Universe[]; months
         </g>
       ))}
       <circle cx={x(0)} cy={y(0)} r="6" fill="var(--accent)" />
-      {!series.length && (
-        <text x={(W - R + L) / 2} y={H / 2} textAnchor="middle" fill="var(--fg-3)" fontFamily="var(--mono)" fontSize="12">invoices appear here as Stripe bills each simulated month</text>
-      )}
+      {!series.length &&
+        universes.map((u, i) => {
+          // while nothing is billed yet, show each fork's progress through the simulated months
+          const last = u.attempts[u.attempts.length - 1];
+          const m = Math.min(months, last?.month ?? 0);
+          const yy = T + ((i + 1) / (universes.length + 1)) * (H - T - B);
+          return (
+            <g key={u.key}>
+              <path d={`M${x(0)} ${y(0)} C ${x(0.5)} ${y(0)}, ${x(0.4)} ${yy}, ${x(1)} ${yy} L ${x(months)} ${yy}`} fill="none" stroke={UCOLOR[u.key]} strokeOpacity="0.18" strokeWidth="2" />
+              {m > 0 && <path d={`M${x(0)} ${y(0)} C ${x(0.5)} ${y(0)}, ${x(0.4)} ${yy}, ${x(1)} ${yy} L ${x(m)} ${yy}`} fill="none" stroke={UCOLOR[u.key]} strokeWidth="2.25" />}
+              <text x={x(months) + 10} y={yy + 4} fill={UCOLOR[u.key]} fontFamily="var(--mono)" fontSize="11.5">{u.key.toUpperCase()} {m ? `M${m}/${months}` : u.status}</text>
+            </g>
+          );
+        })}
     </svg>
   );
 }

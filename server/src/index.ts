@@ -79,14 +79,16 @@ app.post("/api/rehearsals/:id/cleanup", async (c) => {
   return c.json({ ok: true });
 });
 
-// Replays of finished runs (recorded by persist()) so the deployed page always has something real to show.
+// Recorded runs: replays/ ships with the repo, runs/ is written locally by persist().
+const REPLAY_DIRS = ["replays", "runs"];
 app.get("/api/replays", (c) => {
-  if (!existsSync("runs")) return c.json([]);
-  return c.json(readdirSync("runs").filter((f) => f.endsWith(".json")).map((f) => f.replace(/\.json$/, "")));
+  const ids = REPLAY_DIRS.flatMap((d) => (existsSync(d) ? readdirSync(d).filter((f) => f.endsWith(".json")).map((f) => f.replace(/\.json$/, "")) : []));
+  return c.json([...new Set(ids)]);
 });
 app.get("/api/replays/:id", (c) => {
-  const p = `runs/${c.req.param("id").replace(/[^a-z0-9]/g, "")}.json`;
-  if (!existsSync(p)) throw new HttpError(404, "not found");
+  const id = c.req.param("id").replace(/[^a-z0-9]/g, "");
+  const p = REPLAY_DIRS.map((d) => `${d}/${id}.json`).find((f) => existsSync(f));
+  if (!p) throw new HttpError(404, "not found");
   const r = JSON.parse(readFileSync(p, "utf8"));
   return c.json(view(r));
 });
