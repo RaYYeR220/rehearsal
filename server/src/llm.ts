@@ -12,7 +12,7 @@ export async function chat(messages: Msg[], opts: { maxTokens?: number; temperat
         body: JSON.stringify({
           model: config.llmModel,
           messages,
-          max_tokens: opts.maxTokens ?? 8000,
+          max_tokens: opts.maxTokens ?? 16000,
           temperature: opts.temperature ?? 0.2,
           venice_parameters: { include_venice_system_prompt: false },
         }),
@@ -36,7 +36,11 @@ export function codeBlock(text: string, name?: string): string | null {
   const re = /```(?:python|py)?[ \t]*([^\n`]*)\n([\s\S]*?)```/g;
   const blocks: { label: string; body: string }[] = [];
   for (const m of text.matchAll(re)) blocks.push({ label: m[1].trim(), body: m[2] });
-  if (!blocks.length) return null;
+  if (!blocks.length) {
+    // a reply cut off at the token limit leaves the last fence open; take what's there if it parses as a module
+    const open = text.match(/```(?:python|py)?[ \t]*[^\n`]*\n([\s\S]+)$/);
+    return open && /def (check|migrate|prepare)\(/.test(open[1]) ? open[1].trimEnd() + "\n" : null;
+  }
   if (name) {
     const hit = blocks.find((b) => b.label.includes(name)) ?? blocks.find((b) => b.body.includes(`# ${name}`));
     if (hit) return hit.body.trimEnd() + "\n";

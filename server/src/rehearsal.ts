@@ -177,7 +177,7 @@ async function run_(r: Rehearsal) {
 
   setPhase(r, "testing", "Writing the policy test before any strategy exists");
   const checksMsgs: Msg[] = checksPrompt(r.intent, r.policy, worldJson);
-  let checks = codeBlock(await chat(checksMsgs), "checks.py");
+  let checks = codeBlock(await chat(checksMsgs), "checks.py") ?? codeBlock(await chat(checksMsgs), "checks.py");
   for (let i = 0; i < 3; i++) {
     if (!checks) throw new Error("model returned no checks.py");
     await base.files.upload("/work/checks.py", checks);
@@ -218,6 +218,10 @@ async function runUniverse(r: Rehearsal, base: Sandbox, u: Universe, worldJson: 
   u.messages = strategyPrompt(r.intent, r.policy, u, worldJson, r.checks!);
   let reply = await chat(u.messages);
   let code = codeBlock(reply, "strategy.py");
+  if (!code) {
+    reply = await chat(u.messages);
+    code = codeBlock(reply, "strategy.py");
+  }
 
   for (let n = 1; n <= config.maxAttempts; n++) {
     if (!code) throw new Error("model returned no strategy.py");

@@ -10,6 +10,23 @@ Rehearsal takes one sentence from a founder, for example:
 
 It then writes a policy test from that sentence and three different migration strategies, and runs each strategy for six billed months on Stripe's own billing engine. Each strategy runs in its own fork of one paused micro-VM. Failed attempts go back to the agent until the test passes. Nothing touches a real subscription until a human approves one universe, and the apply step refuses to run unless the code is byte-for-byte what was approved.
 
+**Live:** https://production-rehearsal-app.tyzo.nodeops.app · **Recorded run:** [/?replay=c0763a07](https://production-rehearsal-app.tyzo.nodeops.app/?replay=c0763a07)
+
+## What a run looks like
+
+Two recorded runs ship in `replays/` and play back on the deployed app. Both ran against a seeded test-mode account: 12 subscriptions across Starter, Pro monthly, Pro annual and per-seat Team, including one trial and one cancellation at period end.
+
+**`c0763a07`**: *"Move Pro monthly from $20 to $29 as fast as we can without breaking promises: no existing Pro customer ever pays more than $29 a month, nobody gets a mid-cycle charge over $10, and annual, Starter and Team plans stay exactly as they are."*
+- Three universes: swap at renewal, scheduled price switch, immediate prorated swap.
+- The scheduled switch crashed on its first attempt: Stripe returned `Received unknown parameter: phases[iterations]`, a parameter the current API version removed. The agent replaced it with `duration` and passed in a fresh fork.
+- All three passed the policy test. Over six simulated months each collected $2,168 against $1,898 for the status quo, with zero proration lines and zero failed invoices.
+- Tamper test on universe B: refused inside the VM (`strategy.py changed after approval`).
+- Universe A applied: 5 Pro monthly subscriptions moved, 7 left untouched as the policy required, 5 Stripe calls, 0 refused by the guard.
+
+**`a54b9134`**: *"Raise Pro monthly from $20 to $29. Everyone already on Pro monthly keeps paying $20 for their next 3 renewals, then moves to $29. Do not touch annual plans, Starter or Team."*
+- Two universes crashed on the same removed `iterations` parameter and fixed it. The coupon universe ran cleanly but broke the policy in 15 places and was rewritten.
+- The approved universe put 5 subscriptions on schedules: 3 renewals at $20, then $29. The cancelling customer was left alone. 11 Stripe calls, 0 refused.
+
 ## How it works
 
 ```mermaid
@@ -97,7 +114,7 @@ npm run build && npm start      # http://localhost:8787
 | `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` | Any chat-completions compatible endpoint (base URL defaults to Venice) |
 | `UNIVERSES`, `SIM_MONTHS`, `MAX_ATTEMPTS`, `PARALLEL_UNIVERSES` | Defaults 3 / 6 / 3 / 3 |
 
-Tests:
+Tests (11 guard tests: refused writes to other subscriptions, refunds, payouts, customer edits, deletes, foreign schedules, plus the static check):
 
 ```sh
 STRIPE_SECRET_KEY=sk_test_... python -m pytest sandbox/test_guard.py -q
