@@ -10,7 +10,7 @@ Rehearsal takes one sentence from a founder, for example:
 
 It then writes a policy test from that sentence and three different migration strategies, and runs each strategy for six billed months on Stripe's own billing engine. Each strategy runs in its own fork of one paused micro-VM. Failed attempts go back to the agent until the test passes. Nothing touches a real subscription until a human approves one universe, and the apply step refuses to run unless the code is byte-for-byte what was approved.
 
-**Live:** https://production-rehearsal-app.tyzo.nodeops.app · **Recorded run:** [/?replay=c0763a07](https://production-rehearsal-app.tyzo.nodeops.app/?replay=c0763a07)
+**Demo video:** https://youtu.be/ZoCg2aau7_s · **Live:** https://production-rehearsal-app.tyzo.nodeops.app · **Recorded run:** [/?replay=c0763a07](https://production-rehearsal-app.tyzo.nodeops.app/?replay=c0763a07)
 
 ## What a run looks like
 
