@@ -9,6 +9,11 @@ screencast/
 runs/
 *.log
 .DS_Store
+.createos.json
+runs-server.log
+__pycache__/
+.pytest_cache/
+
 .projects/cache
 .projects/vault
 .projects/state.test.json
@@ -16,7 +21,3 @@ runs/
 .env
 .env.*
 !.env.example
-.createos.json
-runs-server.log
-__pycache__/
-.pytest_cache/
