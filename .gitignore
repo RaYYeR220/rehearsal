@@ -1,6 +1,5 @@
 node_modules/
 dist/
-.projects/state.local*.json
 mockups/
 ui-prototypes/
 variants/

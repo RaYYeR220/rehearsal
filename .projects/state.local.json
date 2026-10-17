@@ -1,0 +1,71 @@
+{
+  "version": 4,
+  "project": {
+    "catalog": "prod",
+    "initializedAt": "2026-10-17T20:11:16.380Z",
+    "merchantDisplayName": null,
+    "merchantId": "acct_1URdkI2dRrSekpxR",
+    "projectId": "project_61Vb1u8CFjwR13ety16Vb1heBMNJfbSFKijhh4UbYTvs",
+    "projectName": "rehearsal"
+  },
+  "providers": {
+    "createos": {
+      "accountRequestId": "facctrq_61Vb27y57oDBTtZAW16Vb1heBMNJfbSFKijhh4UbY2Po",
+      "configuration": {},
+      "linkedAt": "2026-10-17T20:25:35.723Z",
+      "providerId": "prvdr_61V0eGC6sUPXoATb051se",
+      "providerName": "createos",
+      "redirectUrl": null,
+      "requestedAt": "2026-10-17T20:25:35.723Z",
+      "status": "complete"
+    },
+    "turso": {
+      "accountRequestId": "facctrq_61Vb27r3uEebuUH6E16Vb1heBMNJfbSFKijhh4UbY2Aa",
+      "configuration": {},
+      "linkedAt": "2026-10-17T20:25:28.396Z",
+      "providerId": "prvdr_61UGLtrGjcXK8rTq15RWq",
+      "providerName": "Turso",
+      "redirectUrl": null,
+      "requestedAt": "2026-10-17T20:25:28.396Z",
+      "status": "complete"
+    }
+  },
+  "resources": {
+    "createos-plan": {
+      "configuration": {},
+      "createdAt": "2026-10-17T20:25:36.568Z",
+      "lastRevealedAt": "2026-10-17T20:25:36.945Z",
+      "lastStatus": "complete",
+      "livemode": true,
+      "name": "createos-plan",
+      "providerId": "prvdr_61V0eGC6sUPXoATb051se",
+      "providerName": "createos",
+      "resourceId": "fres_61Vb280nUOk7gCCnh16Vb1heBMNJfbSFKijhh4UbYCDg",
+      "serviceId": "free"
+    },
+    "createos-project": {
+      "configuration": {},
+      "createdAt": "2026-10-17T20:26:02.852Z",
+      "lastRevealedAt": "2026-10-17T20:26:03.237Z",
+      "lastStatus": "complete",
+      "livemode": true,
+      "name": "createos-project",
+      "providerId": "prvdr_61V0eGC6sUPXoATb051se",
+      "providerName": "createos",
+      "resourceId": "fres_61Vb28QVrBlfLJrB816Vb1heBMNJfbSFKijhh4UbY248",
+      "serviceId": "project"
+    },
+    "turso-plan": {
+      "configuration": {},
+      "createdAt": "2026-10-17T20:25:31.376Z",
+      "lastRevealedAt": "2026-10-17T20:25:31.756Z",
+      "lastStatus": "complete",
+      "livemode": true,
+      "name": "turso-plan",
+      "providerId": "prvdr_61UGLtrGjcXK8rTq15RWq",
+      "providerName": "Turso",
+      "resourceId": "fres_61Vb27tJTriIsC5PO16Vb1heBMNJfbSFKijhh4UbYEka",
+      "serviceId": "starter"
+    }
+  }
+}
